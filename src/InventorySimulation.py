@@ -1,8 +1,9 @@
 import numpy as np
+import heapq
 
 class InventorySimulation:
   
-    def __init__(self, selling_price, customer_arrival_rate, holding_cost, lead_time, simulation_time, reorder_point, max_inventory_level, order_cost_function, demand_distribution_function):
+    def __init__(self,customer_arrival_rate, holding_cost, lead_time, simulation_time, reorder_point, max_inventory_level, order_cost_function, demand_distribution_function):
         """
         Initialize the simulation parameters.
         :param selling_price: Unit selling price
@@ -15,7 +16,7 @@ class InventorySimulation:
         :param order_cost_function: Function to calculate order cost
         :param demand_distribution_function: Function to generate customer demand (distribution G)
         """
-        self.selling_price = selling_price
+        self.selling_price = order_cost_function(1)*1.3  # Selling price is set to 30% more than the order cost of one unit
         self.customer_arrival_rate = customer_arrival_rate
         self.holding_cost = holding_cost
         self.lead_time = lead_time
@@ -31,35 +32,35 @@ class InventorySimulation:
         self.pending_order_quantity = 0  # Pending order quantity
         self.total_order_cost = 0  # Total ordering cost
         self.total_holding_cost = 0  # Total holding cost
+        self.arrival_times = [] # List to store customer arrival times
         self.total_revenue = 0  # Total revenue
-
-        # Event times
-        self.next_customer_arrival_time = np.random.exponential(1 / self.customer_arrival_rate)  # Poisson process
         self.next_order_delivery_time = float('inf')  # No pending order initially
+        
+        self.rng = np.random.default_rng()
+        
+        self.events_queue = []
+        self.events = {'client_arrival': self.handle_customer_arrival,
+                       'order_arrival': self.handle_order_delivery}
 
-    def run(self):
-        """
-        Run the simulation until the specified simulation time.
-        """
-        while self.current_time < self.simulation_time:
-            if self.next_customer_arrival_time < self.next_order_delivery_time:
-                # Handle customer arrival
-                self.handle_customer_arrival()
-            else:
-                # Handle order delivery
-                self.handle_order_delivery()
-
-        # Calculate average profit per unit time
-        average_profit = (self.total_revenue - self.total_order_cost - self.total_holding_cost) / self.simulation_time
-        return average_profit
-
-    def handle_customer_arrival(self):
+       
+    def next_arrival(self):
+        if self.current_time >= self.simulation_time:
+            return
+        ta = self.rng.exponential(1/self.customer_arrival_rate)
+        next_ta = self.current_time + ta
+        if next_ta < self.simulation_time:
+            heapq.heappush(self.events_queue, (next_ta, 'client_arrival'))
+    
+    
+    def handle_customer_arrival(self,next_ta):
         """
         Handle a customer arrival event.
         """
         # Update holding cost for the time period
-        self.total_holding_cost += (self.next_customer_arrival_time - self.current_time) * self.current_inventory * self.holding_cost
-        self.current_time = self.next_customer_arrival_time
+        
+        self.total_holding_cost += (next_ta - self.current_time) * self.current_inventory * self.holding_cost
+        self.current_time = next_ta
+        self.arrival_times.append(next_ta)  # Store arrival time
 
         # Generate customer demand (distribution G)
         customer_demand = self.demand_distribution_function()
@@ -71,23 +72,43 @@ class InventorySimulation:
         if self.current_inventory < self.reorder_point and self.pending_order_quantity == 0:
             self.pending_order_quantity = self.max_inventory_level - self.current_inventory
             self.next_order_delivery_time = self.current_time + self.lead_time
+            if self.next_order_delivery_time < self.simulation_time:
+                # Schedule order arrival event
+                heapq.heappush(self.events_queue, (self.next_order_delivery_time, 'order_arrival'))
 
-        # Schedule next customer arrival (Poisson process)
-        self.next_customer_arrival_time = self.current_time + np.random.exponential(1 / self.customer_arrival_rate)
+        # Schedule next customer arrival
+        self.next_arrival()
 
-    def handle_order_delivery(self):
+    def handle_order_delivery(self,next_ta):
         """
         Handle an order delivery event.
         """
         # Update holding cost for the time period
-        self.total_holding_cost += (self.next_order_delivery_time - self.current_time) * self.current_inventory * self.holding_cost
-        self.current_time = self.next_order_delivery_time
+        self.total_holding_cost += (next_ta - self.current_time) * self.current_inventory * self.holding_cost
+        self.current_time = next_ta
 
         # Update inventory and costs
         self.total_order_cost += self.order_cost_function(self.pending_order_quantity)
         self.current_inventory += self.pending_order_quantity
         self.pending_order_quantity = 0
         self.next_order_delivery_time = float('inf')
+    
+    
+    def run(self):
+        """
+        Run the simulation until the specified simulation time.
+        """
+        self.next_arrival()
+        while self.events_queue:
+            event_tuple = heapq.heappop(self.events_queue)
+            time,event_type = event_tuple
+            if event_type == 'client_arrival':
+                self.events[event_type](time)
+            elif event_type == 'order_arrival':
+                self.events[event_type](time)
+        # Calculate average profit per unit time
+        average_profit = (self.total_revenue - self.total_order_cost - self.total_holding_cost) / self.simulation_time
+        return average_profit
 
     def summary(self):
         """
@@ -105,20 +126,19 @@ class InventorySimulation:
 if __name__ == "__main__":
     # Define cost function and demand distribution
     def order_cost_function(order_quantity):
-        return 5 + 2 * order_quantity  # Fixed cost + variable cost per unit
+        return 5 + 5 * order_quantity  # Fixed cost + variable cost per unit
 
     def demand_distribution_function():
         return np.random.geometric(p=0.3)  # Example of distribution G (geometric)
 
     # Initialize and run simulation
     simulation = InventorySimulation(
-        selling_price=10,
         customer_arrival_rate=5,  # Poisson arrival rate (lambda)
         holding_cost=1,
-        lead_time=2,
-        simulation_time=100,
+        lead_time=1,
+        simulation_time=24,
         reorder_point=20,
-        max_inventory_level=50,
+        max_inventory_level=80,
         order_cost_function=order_cost_function,
         demand_distribution_function=demand_distribution_function
     )

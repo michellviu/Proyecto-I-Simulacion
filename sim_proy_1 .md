@@ -1,11 +1,26 @@
 
+# Sim2025-proy1
+Se considera aceptable una entrega si:
+
+  - existe un issue en este repositorio con el siguiente formato
+  ```
+Nombre: Fulanito Pérez
+Grupo: P-311
+Telegram: @fulanito123
+Repo: https://github.com/fulanito123/proy-tienda
+  ```
+  - el issue fue creado antes de de las 00:01 14/04/25
+  - el repo es público
+  - el repo no contiene cambios posteriores a la entrega
+  - solo se revisará la rama por defecto (main o master según sea el caso)
+  - sue cumplen los requerimintos que a continuación se decriben
 # Proyecto: Simulación de Eventos Discretos
 
 Este proyecto tiene como objetivo desarrollar una simulación de eventos discretos para analizar y entender mejor ciertos fenómenos. A través de este trabajo, buscamos aplicar los principios de la simulación de eventos discretos para modelar y experimentar con estos fenómenos, y obtener resultados que nos ayuden a tomar decisiones informadas.
 
 El proyecto debe ser entregado en un repositorio público de GitHub. Este repositorio debe contener tanto el código fuente de tu simulación como el informe del proyecto en LaTeX (incluir el pdf compilado). Asegúrese de que el repositorio esté bien organizado y que tanto el código como el informe sean fácilmente accesibles.
 
-El informe del proyecto debe ser autocontenido y debe proporcionar una descripción clara y detallada de la simulación, los resultados y las conclusiones, asi como todas las tablas y gráficos necesarios para respaldar sus afirmaciones. En caso de que algunas de sus afirmaciones se basen en la literatura existente, asegúrese de citar adecuadamente las fuentes.
+El informe del proyecto debe ser autocontenido y debe proporcionar una descripción clara y detallada de la simulación, los resultados y las conclusiones, así como todas las tablas y gráficos necesarios para respaldar sus afirmaciones. En caso de que algunas de sus afirmaciones se basen en la literatura existente, asegúrese de citar adecuadamente las fuentes.
 
 # Estructura del informe(Ejemplo)
 
